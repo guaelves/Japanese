@@ -1,249 +1,214 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>五十音泡泡遊戲（平假名）</title>
-  <style>
-    :root{--bg:#f7fbff;--accent:#7cc6ff;--good:#53c28b;--bad:#ff6b6b}
-    *{box-sizing:border-box}
-    body{font-family:"Microsoft JhengHei",Arial,sans-serif;background:var(--bg);margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center}
-    .wrap{width:100%;max-width:1000px;height:760px;background:white;border-radius:18px;box-shadow:0 8px 30px rgba(20,40,80,0.08);padding:20px;display:flex;flex-direction:column;gap:12px;position:relative}
-    header{display:flex;align-items:center;justify-content:space-between}
-    .title{display:flex;flex-direction:column}
-    .title h1{margin:0;font-size:20px}
-    .title p{margin:0;color:#666;font-size:14px}
-    .target{font-weight:800;font-size:96px;text-align:center;line-height:1;margin:6px 0}
-    .target-wrap{display:flex;align-items:center;justify-content:center;flex-direction:column}
-    .controls{display:flex;gap:10px;align-items:center}
-    button{background:var(--accent);border:none;color:white;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
-    button.secondary{background:#eee;color:#333}
-    .info{color:#444;font-weight:600}
-
-    .play-area{flex:1;background:linear-gradient(180deg,#ffffff,#f2f8ff);border-radius:12px;position:relative;overflow:hidden;border:1px solid rgba(0,0,0,0.03)}
-    .bubble{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;transition:transform .25s ease,opacity .25s ease;box-shadow:0 6px 14px rgba(20,30,80,0.08);border:3px solid rgba(255,255,255,0.6);background:rgba(255,255,255,0.85);}
-    .bubble.correct{background:linear-gradient(135deg,#d2ffd9,#b5f0d0);border-color:rgba(0,0,0,0.04);}
-    .bubble.wrong{animation:pop .45s forwards}
-    @keyframes pop{0%{transform:scale(1);opacity:1}70%{transform:scale(.8);opacity:1}100%{transform:scale(0.2);opacity:0}}
-    .bubble.outline{border:2px dashed rgba(0,0,0,0.15);background:transparent}
-
-    .footer{display:flex;align-items:center;justify-content:space-between}
-    .status{color:#555}
-    .big{font-weight:800}
-    @media(max-width:600px){.target{font-size:80px}.wrap{height:calc(100vh - 40px);max-width:420px}}
-  </style>
+<meta charset="UTF-8">
+<title>五十音泡泡遊戲</title>
+<style>
+  body {
+    font-family: "Noto Sans JP", "Microsoft JhengHei", sans-serif;
+    text-align: center;
+    background: #f0f8ff;
+    overflow: hidden;
+    margin: 0;
+  }
+  h1 {
+    font-size: 48px;
+    margin: 20px 0 10px;
+  }
+  #mode-toggle {
+    font-size: 24px;
+    padding: 6px 14px;
+    border-radius: 12px;
+    background-color: #87ceeb;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+  #question {
+    font-size: 100px;
+    font-weight: bold;
+    margin: 20px 0;
+  }
+  #game-area {
+    position: relative;
+    width: 100vw;
+    height: 60vh;
+    overflow: hidden;
+  }
+  .bubble {
+    position: absolute;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 48px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    user-select: none;
+  }
+  .bubble:hover {
+    transform: scale(1.1);
+  }
+  .correct {
+    background-color: #90ee90 !important;
+    color: white !important;
+  }
+  .wrong {
+    background-color: transparent !important;
+    color: gray !important;
+    border: 2px dashed #ccc !important;
+  }
+  #controls {
+    margin-top: 20px;
+  }
+  button {
+    font-size: 24px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background-color: #4682b4;
+    color: white;
+    cursor: pointer;
+  }
+</style>
 </head>
 <body>
-  <div class="wrap" role="application">
-    <header>
-      <div class="title">
-        <h1>五十音泡泡遊戲（平假名）</h1>
-        <p>題目會顯示一個平假名，點選對應的泡泡（共 10 題）</p>
-      </div>
-      <div class="controls">
-        <div class="info">題數 <span id="qnum">0</span>/10</div>
-        <button id="restart">重新開始</button>
-      </div>
-    </header>
-
-    <div class="target-wrap">
-      <div id="target" class="target" aria-live="polite">-</div>
-      <div style="display:flex;gap:10px;align-items:center;">
-        <button class="secondary" id="playSound">播放聲音</button>
-        <div class="status">答對數 <span id="score">0</span></div>
-      </div>
-    </div>
-
-    <section class="play-area" id="playArea" aria-label="遊戲畫面"></section>
-
-    <div class="footer">
-      <div class="status">提示：泡泡字體至少 40px，大小不一、位置不重疊。正確變彩色，錯誤會破掉。</div>
-      <div class="status">作者：ChatGPT</div>
-    </div>
+  <h1>五十音泡泡遊戲</h1>
+  <button id="mode-toggle">切換為片假名</button>
+  <div id="question"></div>
+  <div id="game-area"></div>
+  <div id="controls">
+    <button id="restart">重新開始</button>
   </div>
 
-  <script>
-    // 五十音（平假名）
-    const kanaList = [
-      'あ','い','う','え','お',
-      'か','き','く','け','こ',
-      'さ','し','す','せ','そ',
-      'た','ち','つ','て','と',
-      'な','に','ぬ','ね','の',
-      'は','ひ','ふ','へ','ほ',
-      'ま','み','む','め','も',
-      'や','ゆ','よ',
-      'ら','り','る','れ','ろ',
-      'わ','を','ん'
-    ];
+<script>
+const hiragana = [
+  "あ","い","う","え","お",
+  "か","き","く","け","こ",
+  "さ","し","す","せ","そ",
+  "た","ち","つ","て","と",
+  "な","に","ぬ","ね","の",
+  "は","ひ","ふ","へ","ほ",
+  "ま","み","む","め","も",
+  "や","ゆ","よ",
+  "ら","り","る","れ","ろ",
+  "わ","を","ん"
+];
 
-    const playArea = document.getElementById('playArea');
-    const targetEl = document.getElementById('target');
-    const qnumEl = document.getElementById('qnum');
-    const scoreEl = document.getElementById('score');
-    const restartBtn = document.getElementById('restart');
-    const playSoundBtn = document.getElementById('playSound');
+const katakana = [
+  "ア","イ","ウ","エ","オ",
+  "カ","キ","ク","ケ","コ",
+  "サ","シ","ス","セ","ソ",
+  "タ","チ","ツ","テ","ト",
+  "ナ","ニ","ヌ","ネ","ノ",
+  "ハ","ヒ","フ","ヘ","ホ",
+  "マ","ミ","ム","メ","モ",
+  "ヤ","ユ","ヨ",
+  "ラ","リ","ル","レ","ロ",
+  "ワ","ヲ","ン"
+];
 
-    let questions = [];
-    let current = 0;
-    let score = 0;
-    let busy = false;
+let currentSet = hiragana;
+let currentQuestion = "";
+let questionCount = 0;
+const totalQuestions = 10;
 
-    function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;}
+const questionDiv = document.getElementById("question");
+const gameArea = document.getElementById("game-area");
+const restartBtn = document.getElementById("restart");
+const modeBtn = document.getElementById("mode-toggle");
 
-    function makeQuestions(){
-      const copy = [...kanaList];
-      shuffle(copy);
-      return copy.slice(0,10);
-    }
+// 生成隨機不重疊泡泡
+function generateBubbles(correctKana) {
+  gameArea.innerHTML = "";
+  const usedPositions = [];
+  const allKana = [...currentSet];
+  const options = [correctKana];
 
-    function speak(text){
-      if(!('speechSynthesis' in window)) return;
-      const ut = new SpeechSynthesisUtterance(text);
-      ut.lang = 'ja-JP';
-      const voices = speechSynthesis.getVoices();
-      const v = voices.find(x=>x.lang.includes('ja')) || voices[0];
-      if(v) ut.voice=v;
-      ut.rate = 0.9;
-      speechSynthesis.cancel();
-      speechSynthesis.speak(ut);
-    }
+  while (options.length < 10) {
+    const rand = allKana[Math.floor(Math.random() * allKana.length)];
+    if (!options.includes(rand)) options.push(rand);
+  }
 
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    const audiocontext = AudioCtx ? new AudioCtx() : null;
-    function beep(freq, duration=0.12){
-      if(!audiocontext) return;
-      const o = audiocontext.createOscillator();
-      const g = audiocontext.createGain();
-      o.type='sine'; o.frequency.value=freq; g.gain.value=0.04;
-      o.connect(g); g.connect(audiocontext.destination);
-      o.start(); o.stop(audiocontext.currentTime + duration);
-    }
+  options.sort(() => Math.random() - 0.5);
 
-    function placeBubbles(correctSymbol){
-      playArea.innerHTML='';
-      const areaRect = playArea.getBoundingClientRect();
-      const bubbles = [];
-      const count = 10;
-      const choices = new Set();
-      choices.add(correctSymbol);
-      while(choices.size < count){
-        const pick = kanaList[Math.floor(Math.random()*kanaList.length)];
-        choices.add(pick);
-      }
-      const arr = shuffle(Array.from(choices));
+  options.forEach(kana => {
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = kana;
 
-      function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
-      function overlaps(x,y,r,others){
-        for(const o of others){
-          const dx = x - o.x; const dy = y - o.y; const dist = Math.sqrt(dx*dx+dy*dy);
-          if(dist < r + o.r + 6) return true;
+    const size = Math.floor(Math.random() * 50) + 80;
+    bubble.style.width = size + "px";
+    bubble.style.height = size + "px";
+    bubble.style.backgroundColor = "#add8e6";
+
+    let top, left, overlap;
+    do {
+      overlap = false;
+      top = Math.random() * (gameArea.clientHeight - size);
+      left = Math.random() * (gameArea.clientWidth - size);
+      for (let pos of usedPositions) {
+        const dx = pos.left - left;
+        const dy = pos.top - top;
+        if (Math.sqrt(dx * dx + dy * dy) < (pos.size + size) / 1.5) {
+          overlap = true;
+          break;
         }
-        return false;
       }
+    } while (overlap);
+    usedPositions.push({ top, left, size });
 
-      for(const sym of arr){
-        const font = rand(40,64);
-        const diameter = Math.max(80, font*2 + rand(-10,50));
-        const r = diameter/2;
-        let x,y,attempt=0;
-        do{
-          x = rand(r+8, Math.max(r+8, areaRect.width - r - 8));
-          y = rand(r+8, Math.max(r+8, areaRect.height - r - 8));
-          attempt++;
-          if(attempt>400) break;
-        } while(overlaps(x,y,r,bubbles));
-        bubbles.push({sym,x,y,r,font,diameter});
-      }
+    bubble.style.top = `${top}px`;
+    bubble.style.left = `${left}px`;
 
-      for(const b of bubbles){
-        const el = document.createElement('div');
-        el.className='bubble';
-        el.style.width=b.diameter+'px';
-        el.style.height=b.diameter+'px';
-        el.style.left=(b.x-b.r)+'px';
-        el.style.top=(b.y-b.r)+'px';
-        el.style.fontSize=b.font+'px';
-        el.textContent=b.sym;
-        el.setAttribute('role','button');
-        el.setAttribute('aria-label','選項 '+b.sym);
-        el.addEventListener('click',()=>onBubbleClick(el,b.sym));
-        playArea.appendChild(el);
-      }
-    }
+    bubble.onclick = () => checkAnswer(kana, bubble);
+    gameArea.appendChild(bubble);
+  });
+}
 
-    function onBubbleClick(el,sym){
-      if(busy) return;
-      const targetSym = questions[current];
-      if(sym === targetSym){
-        busy=true;
-        el.classList.add('correct');
-        el.style.transform='scale(1.06)';
-        beep(880,0.12);
-        score++;
-        scoreEl.textContent=score;
-        setTimeout(()=>{
-          current++;
-          qnumEl.textContent=current;
-          if(current >= questions.length){
-            targetEl.textContent='おめでとう！';
-            speak('おめでとう');
-            busy=false;
-            return;
-          }
-          showQuestion(current);
-          busy=false;
-        },600);
-      } else {
-        el.classList.add('wrong');
-        beep(220,0.15);
-        setTimeout(()=>{
-          el.classList.remove('wrong');
-          el.classList.add('outline');
-          el.style.opacity='0.9';
-          el.style.pointerEvents='none';
-        },460);
-      }
-    }
+// 題目播放語音
+function speakKana(kana) {
+  const utter = new SpeechSynthesisUtterance(kana);
+  utter.lang = "ja-JP";
+  speechSynthesis.speak(utter);
+}
 
-    function showQuestion(index){
-      const sym = questions[index];
-      targetEl.textContent=sym;
-      targetEl.style.fontSize='96px';
-      qnumEl.textContent=index+1;
-      placeBubbles(sym);
-      speak(sym);
-    }
+function newQuestion() {
+  if (questionCount >= totalQuestions) {
+    alert("🎉 全部答對了！");
+    return;
+  }
+  currentQuestion = currentSet[Math.floor(Math.random() * currentSet.length)];
+  questionDiv.textContent = currentQuestion;
+  questionCount++;
+  generateBubbles(currentQuestion);
+  speakKana(currentQuestion);
+}
 
-    function startGame(){
-      speechSynthesis.cancel();
-      questions=makeQuestions();
-      current=0; score=0; busy=false;
-      scoreEl.textContent=score;
-      qnumEl.textContent=0;
-      setTimeout(()=>{
-        showQuestion(0);
-        qnumEl.textContent=1;
-      },120);
-    }
+function checkAnswer(selected, bubble) {
+  if (selected === currentQuestion) {
+    bubble.classList.add("correct");
+    setTimeout(newQuestion, 800);
+  } else {
+    bubble.classList.add("wrong");
+    bubble.textContent = "";
+  }
+}
 
-    restartBtn.addEventListener('click',()=>startGame());
-    playSoundBtn.addEventListener('click',()=>{
-      const sym=questions[current];
-      if(sym) speak(sym);
-    });
+restartBtn.onclick = () => {
+  questionCount = 0;
+  newQuestion();
+};
 
-    startGame();
+modeBtn.onclick = () => {
+  currentSet = currentSet === hiragana ? katakana : hiragana;
+  modeBtn.textContent = currentSet === hiragana ? "切換為片假名" : "切換為平假名";
+  questionCount = 0;
+  newQuestion();
+};
 
-    document.addEventListener('keydown',(e)=>{
-      if(e.key===' '){e.preventDefault();const f=document.activeElement;if(f&&f.classList.contains('bubble'))f.click();}
-    });
-
-    let resizeTimer;
-    window.addEventListener('resize',()=>{
-      clearTimeout(resizeTimer);
-      resizeTimer=setTimeout(()=>{if(questions.length)showQuestion(current);},300);
-    });
-  </script>
+newQuestion();
+</script>
 </body>
 </html>
