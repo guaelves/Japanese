@@ -1,1 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>假名練習（自動播放）</title>
+<style>
+body {
+  font-family: "Microsoft JhengHei", sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #f0f8ff;
+  margin: 20px;
+}
+h1 {
+  font-size: clamp(28px, 6vw, 48px);
+  margin-bottom: 10px;
+}
+.mode-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+button {
+  font-size: 22px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: none;
+  background-color: #87cefa;
+  color: white;
+  cursor: pointer;
+}
+button:hover {
+  background-color: #00bfff;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(5, 80px);
+  gap: 10px;
+}
+.cell {
+  width: 80px;
+  height: 80px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 36px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.cell:hover {
+  transform: scale(1.1);
+  background-color: #e0f7ff;
+}
+.controls {
+  margin-top: 15px;
+}
+</style>
+</head>
+<body>
 
+<h1>假名練習</h1>
+<p>可切換平假名／片假名，自動播放發音</p>
+
+<div class="mode-buttons">
+  <button id="hiraganaBtn">平假名</button>
+  <button id="katakanaBtn">片假名</button>
+  <button id="autoBtn">▶ 自動播放</button>
+</div>
+
+<div id="kanaGrid" class="grid"></div>
+
+<div class="controls">
+  <label>速度：
+    <select id="speed">
+      <option value="1500">慢</option>
+      <option value="1000" selected>中</option>
+      <option value="500">快</option>
+    </select>
+  </label>
+</div>
+
+<script>
+const hiragana = ["あ","い","う","え","お",
+                  "か","き","く","け","こ",
+                  "さ","し","す","せ","そ",
+                  "た","ち","つ","て","と",
+                  "な","に","ぬ","ね","の",
+                  "は","ひ","ふ","へ","ほ",
+                  "ま","み","む","め","も",
+                  "や","ゆ","よ",
+                  "ら","り","る","れ","ろ",
+                  "わ","を","ん"];
+
+const katakana = ["ア","イ","ウ","エ","オ",
+                  "カ","キ","ク","ケ","コ",
+                  "サ","シ","ス","セ","ソ",
+                  "タ","チ","ツ","テ","ト",
+                  "ナ","ニ","ヌ","ネ","ノ",
+                  "ハ","ヒ","フ","ヘ","ホ",
+                  "マ","ミ","ム","メ","モ",
+                  "ヤ","ユ","ヨ",
+                  "ラ","リ","ル","レ","ロ",
+                  "ワ","ヲ","ン"];
+
+let currentMode = "hiragana";
+let autoPlay = false;
+let autoInterval = null;
+
+const grid = document.getElementById("kanaGrid");
+
+function renderGrid() {
+  grid.innerHTML = "";
+  const list = currentMode === "hiragana" ? hiragana : katakana;
+  list.forEach(kana => {
+    const div = document.createElement("div");
+    div.className = "cell";
+    div.textContent = kana;
+    div.onclick = () => speakKana(kana);
+    grid.appendChild(div);
+  });
+}
+
+function speakKana(kana) {
+  const utter = new SpeechSynthesisUtterance(kana);
+  utter.lang = "ja-JP";
+  speechSynthesis.speak(utter);
+}
+
+function startAutoPlay() {
+  if (autoPlay) {
+    autoPlay = false;
+    clearInterval(autoInterval);
+    document.getElementById("autoBtn").textContent = "▶ 自動播放";
+    return;
+  }
+  autoPlay = true;
+  const list = currentMode === "hiragana" ? hiragana : katakana;
+  let index = 0;
+  document.getElementById("autoBtn").textContent = "⏸ 停止";
+  autoInterval = setInterval(() => {
+    speakKana(list[index]);
+    index++;
+    if (index >= list.length) index = 0;
+  }, parseInt(document.getElementById("speed").value));
+}
+
+document.getElementById("hiraganaBtn").onclick = () => {
+  currentMode = "hiragana";
+  renderGrid();
+};
+document.getElementById("katakanaBtn").onclick = () => {
+  currentMode = "katakana";
+  renderGrid();
+};
+document.getElementById("autoBtn").onclick = startAutoPlay;
+document.getElementById("speed").onchange = () => {
+  if (autoPlay) {
+    clearInterval(autoInterval);
+    startAutoPlay();
+  }
+};
+
+renderGrid();
+</script>
+
+</body>
+</html>
