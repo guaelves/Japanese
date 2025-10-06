@@ -13,7 +13,7 @@ body {
 }
 h1 {
   margin-top: 20px;
-  font-size: clamp(60px, 10vw, 120px);
+  font-size: 100px;
   font-weight: bold;
 }
 #gameArea {
@@ -28,9 +28,9 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 40px;
+  font-size: 48px;
   font-weight: bold;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.9);
   box-shadow: 0 0 6px rgba(0,0,0,0.2);
   cursor: pointer;
   transition: transform 0.3s, opacity 0.3s;
@@ -52,8 +52,8 @@ h1 {
   }
 }
 #restartBtn {
-  font-size: 28px;
-  padding: 10px 24px;
+  font-size: 32px;
+  padding: 12px 28px;
   border-radius: 12px;
   border: none;
   background-color: #87cefa;
@@ -65,7 +65,7 @@ h1 {
   background-color: #00bfff;
 }
 #result {
-  font-size: 48px;
+  font-size: 56px;
   font-weight: bold;
   margin-top: 20px;
   color: #ff69b4;
@@ -80,7 +80,7 @@ h1 {
 <button id="restartBtn">重新開始</button>
 
 <script>
-// 平假名表（包含ん）
+// 平假名（含「ん」）
 const kanaList = ["あ","い","う","え","お",
 "か","き","く","け","こ",
 "さ","し","す","せ","そ",
@@ -101,7 +101,7 @@ let questionCount = 0;
 const correctSound = new Audio("https://cdn.pixabay.com/audio/2022/03/15/audio_0f5b4cb1d9.mp3");
 const popSound = new Audio("https://cdn.pixabay.com/audio/2022/03/15/audio_3c9d8a4ab2.mp3");
 
-// 隨機選假名
+// 隨機假名
 function getRandomKana() {
   return kanaList[Math.floor(Math.random() * kanaList.length)];
 }
@@ -110,6 +110,7 @@ function getRandomKana() {
 function speakKana(kana) {
   const utter = new SpeechSynthesisUtterance(kana);
   utter.lang = "ja-JP";
+  speechSynthesis.cancel(); // 防止重疊播放
   speechSynthesis.speak(utter);
 }
 
@@ -117,8 +118,9 @@ function speakKana(kana) {
 function generateBubbles(correctKana) {
   const area = document.getElementById("gameArea");
   area.innerHTML = "";
-  const totalBubbles = 10 + Math.floor(Math.random() * 6); // 10~15個泡泡
+  const totalBubbles = 12;
   const usedKana = new Set([correctKana]);
+
   for (let i = 0; i < totalBubbles; i++) {
     let kana;
     do {
@@ -130,7 +132,7 @@ function generateBubbles(correctKana) {
     div.className = "bubble";
     div.textContent = kana;
 
-    const size = 70 + Math.random() * 60; // 泡泡大小70~130
+    const size = 90 + Math.random() * 80; // 泡泡大小 90~170
     div.style.width = size + "px";
     div.style.height = size + "px";
     div.style.left = Math.random() * (window.innerWidth - size) + "px";
@@ -153,11 +155,11 @@ function generateBubbles(correctKana) {
     area.appendChild(div);
   }
 
-  // 把正確答案泡泡也加進來
+  // 加上正確泡泡
   const correctDiv = document.createElement("div");
   correctDiv.className = "bubble";
   correctDiv.textContent = correctKana;
-  const size = 80 + Math.random() * 60;
+  const size = 120 + Math.random() * 80;
   correctDiv.style.width = size + "px";
   correctDiv.style.height = size + "px";
   correctDiv.style.left = Math.random() * (window.innerWidth - size) + "px";
