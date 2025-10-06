@@ -2,169 +2,205 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>假名練習（自動播放）</title>
+<title>五十音泡泡遊戲</title>
 <style>
 body {
   font-family: "Microsoft JhengHei", sans-serif;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   background-color: #f0f8ff;
-  margin: 20px;
+  overflow: hidden;
+  margin: 0;
+  text-align: center;
 }
 h1 {
-  font-size: clamp(28px, 6vw, 48px);
-  margin-bottom: 10px;
+  margin-top: 20px;
+  font-size: clamp(60px, 10vw, 120px);
+  font-weight: bold;
 }
-.mode-buttons {
+#gameArea {
+  position: relative;
+  width: 100vw;
+  height: 70vh;
+  overflow: hidden;
+}
+.bubble {
+  position: absolute;
+  border-radius: 50%;
   display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
+  justify-content: center;
+  align-items: center;
+  font-size: 40px;
+  font-weight: bold;
+  background-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 6px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: transform 0.3s, opacity 0.3s;
 }
-button {
-  font-size: 22px;
-  padding: 8px 16px;
-  border-radius: 10px;
+.bubble:hover {
+  transform: scale(1.1);
+}
+.correct {
+  background-color: #90ee90 !important;
+  color: white;
+}
+.burst {
+  animation: pop 0.4s forwards;
+}
+@keyframes pop {
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+#restartBtn {
+  font-size: 28px;
+  padding: 10px 24px;
+  border-radius: 12px;
   border: none;
   background-color: #87cefa;
   color: white;
   cursor: pointer;
+  margin: 20px;
 }
-button:hover {
+#restartBtn:hover {
   background-color: #00bfff;
 }
-.grid {
-  display: grid;
-  grid-template-columns: repeat(5, 80px);
-  gap: 10px;
-}
-.cell {
-  width: 80px;
-  height: 80px;
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 36px;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-.cell:hover {
-  transform: scale(1.1);
-  background-color: #e0f7ff;
-}
-.controls {
-  margin-top: 15px;
+#result {
+  font-size: 48px;
+  font-weight: bold;
+  margin-top: 20px;
+  color: #ff69b4;
 }
 </style>
 </head>
 <body>
 
-<h1>假名練習</h1>
-<p>可切換平假名／片假名，自動播放發音</p>
-
-<div class="mode-buttons">
-  <button id="hiraganaBtn">平假名</button>
-  <button id="katakanaBtn">片假名</button>
-  <button id="autoBtn">▶ 自動播放</button>
-</div>
-
-<div id="kanaGrid" class="grid"></div>
-
-<div class="controls">
-  <label>速度：
-    <select id="speed">
-      <option value="1500">慢</option>
-      <option value="1000" selected>中</option>
-      <option value="500">快</option>
-    </select>
-  </label>
-</div>
+<h1 id="question">あ</h1>
+<div id="gameArea"></div>
+<div id="result"></div>
+<button id="restartBtn">重新開始</button>
 
 <script>
-const hiragana = ["あ","い","う","え","お",
-                  "か","き","く","け","こ",
-                  "さ","し","す","せ","そ",
-                  "た","ち","つ","て","と",
-                  "な","に","ぬ","ね","の",
-                  "は","ひ","ふ","へ","ほ",
-                  "ま","み","む","め","も",
-                  "や","ゆ","よ",
-                  "ら","り","る","れ","ろ",
-                  "わ","を","ん"];
+// 平假名表（包含ん）
+const kanaList = ["あ","い","う","え","お",
+"か","き","く","け","こ",
+"さ","し","す","せ","そ",
+"た","ち","つ","て","と",
+"な","に","ぬ","ね","の",
+"は","ひ","ふ","へ","ほ",
+"ま","み","む","め","も",
+"や","ゆ","よ",
+"ら","り","る","れ","ろ",
+"わ","を","ん"];
 
-const katakana = ["ア","イ","ウ","エ","オ",
-                  "カ","キ","ク","ケ","コ",
-                  "サ","シ","ス","セ","ソ",
-                  "タ","チ","ツ","テ","ト",
-                  "ナ","ニ","ヌ","ネ","ノ",
-                  "ハ","ヒ","フ","ヘ","ホ",
-                  "マ","ミ","ム","メ","モ",
-                  "ヤ","ユ","ヨ",
-                  "ラ","リ","ル","レ","ロ",
-                  "ワ","ヲ","ン"];
+let questionKana = "";
+let score = 0;
+let totalQuestions = 10;
+let questionCount = 0;
 
-let currentMode = "hiragana";
-let autoPlay = false;
-let autoInterval = null;
+// 音效
+const correctSound = new Audio("https://cdn.pixabay.com/audio/2022/03/15/audio_0f5b4cb1d9.mp3");
+const popSound = new Audio("https://cdn.pixabay.com/audio/2022/03/15/audio_3c9d8a4ab2.mp3");
 
-const grid = document.getElementById("kanaGrid");
-
-function renderGrid() {
-  grid.innerHTML = "";
-  const list = currentMode === "hiragana" ? hiragana : katakana;
-  list.forEach(kana => {
-    const div = document.createElement("div");
-    div.className = "cell";
-    div.textContent = kana;
-    div.onclick = () => speakKana(kana);
-    grid.appendChild(div);
-  });
+// 隨機選假名
+function getRandomKana() {
+  return kanaList[Math.floor(Math.random() * kanaList.length)];
 }
 
+// 唸出假名
 function speakKana(kana) {
   const utter = new SpeechSynthesisUtterance(kana);
   utter.lang = "ja-JP";
   speechSynthesis.speak(utter);
 }
 
-function startAutoPlay() {
-  if (autoPlay) {
-    autoPlay = false;
-    clearInterval(autoInterval);
-    document.getElementById("autoBtn").textContent = "▶ 自動播放";
-    return;
+// 生成泡泡
+function generateBubbles(correctKana) {
+  const area = document.getElementById("gameArea");
+  area.innerHTML = "";
+  const totalBubbles = 10 + Math.floor(Math.random() * 6); // 10~15個泡泡
+  const usedKana = new Set([correctKana]);
+  for (let i = 0; i < totalBubbles; i++) {
+    let kana;
+    do {
+      kana = getRandomKana();
+    } while (usedKana.has(kana));
+    usedKana.add(kana);
+
+    const div = document.createElement("div");
+    div.className = "bubble";
+    div.textContent = kana;
+
+    const size = 70 + Math.random() * 60; // 泡泡大小70~130
+    div.style.width = size + "px";
+    div.style.height = size + "px";
+    div.style.left = Math.random() * (window.innerWidth - size) + "px";
+    div.style.top = Math.random() * (window.innerHeight * 0.6 - size) + "px";
+
+    div.onclick = () => {
+      if (kana === correctKana) {
+        div.classList.add("correct");
+        correctSound.currentTime = 0;
+        correctSound.play();
+        nextQuestion();
+      } else {
+        div.classList.add("burst");
+        popSound.currentTime = 0;
+        popSound.play();
+        setTimeout(() => div.remove(), 300);
+      }
+    };
+
+    area.appendChild(div);
   }
-  autoPlay = true;
-  const list = currentMode === "hiragana" ? hiragana : katakana;
-  let index = 0;
-  document.getElementById("autoBtn").textContent = "⏸ 停止";
-  autoInterval = setInterval(() => {
-    speakKana(list[index]);
-    index++;
-    if (index >= list.length) index = 0;
-  }, parseInt(document.getElementById("speed").value));
+
+  // 把正確答案泡泡也加進來
+  const correctDiv = document.createElement("div");
+  correctDiv.className = "bubble";
+  correctDiv.textContent = correctKana;
+  const size = 80 + Math.random() * 60;
+  correctDiv.style.width = size + "px";
+  correctDiv.style.height = size + "px";
+  correctDiv.style.left = Math.random() * (window.innerWidth - size) + "px";
+  correctDiv.style.top = Math.random() * (window.innerHeight * 0.6 - size) + "px";
+  correctDiv.onclick = () => {
+    correctDiv.classList.add("correct");
+    correctSound.currentTime = 0;
+    correctSound.play();
+    nextQuestion();
+  };
+  area.appendChild(correctDiv);
 }
 
-document.getElementById("hiraganaBtn").onclick = () => {
-  currentMode = "hiragana";
-  renderGrid();
-};
-document.getElementById("katakanaBtn").onclick = () => {
-  currentMode = "katakana";
-  renderGrid();
-};
-document.getElementById("autoBtn").onclick = startAutoPlay;
-document.getElementById("speed").onchange = () => {
-  if (autoPlay) {
-    clearInterval(autoInterval);
-    startAutoPlay();
+function nextQuestion() {
+  questionCount++;
+  if (questionCount > totalQuestions) {
+    endGame();
+    return;
   }
+  setTimeout(startQuestion, 800);
+}
+
+function startQuestion() {
+  questionKana = getRandomKana();
+  document.getElementById("question").textContent = questionKana;
+  speakKana(questionKana);
+  generateBubbles(questionKana);
+}
+
+function endGame() {
+  document.getElementById("gameArea").innerHTML = "";
+  document.getElementById("question").textContent = "";
+  document.getElementById("result").textContent = "🎉 全部完成！おめでとう！";
+}
+
+// 重新開始
+document.getElementById("restartBtn").onclick = () => {
+  questionCount = 0;
+  document.getElementById("result").textContent = "";
+  startQuestion();
 };
 
-renderGrid();
+startQuestion();
 </script>
 
 </body>
